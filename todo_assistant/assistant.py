@@ -20,7 +20,11 @@ class TODOAssistant:
             ai_response = self.step()
             for message in ai_response['messages']:
                 if isinstance(message, AIMessage) and message.content:
-                    print(message.content)
+                    if '<FINISH>' in message.content:
+                        print("Assistant decided to end conversation")
+                        return
+
+                    print(message.content.replace('<FINISH>', ''))
 
             print("=" * 10)
             human_input = input("Your response: ")

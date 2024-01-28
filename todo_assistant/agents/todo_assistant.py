@@ -8,7 +8,6 @@ from langchain.prompts import (
     PromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
@@ -66,13 +65,27 @@ class TODOAssistantAgent(BaseAgent[TODOAssistantAgentInput, TODOAssistantAgentOu
             ]
         )
 
-        llm_with_tools = llm.bind(
-            functions=[
-                format_tool_to_openai_function(t) for t in [todo_api_agent_tool, retrieval_tool]
-            ]
-        )
-
-        agent = prompt | llm_with_tools | TODOAssistantOutputParser()
+        tool_names = [todo_api_agent_tool.name, retrieval_tool.name]
+        function_schema = {
+            "name": "tool_call",
+            "description": "Select tool to call",
+            "parameters": {
+                "title": "Tool call",
+                "type": "object",
+                "properties": {
+                    "tool": {
+                        "title": "Tool",
+                        "anyOf": [
+                            {"enum": tool_names},
+                        ],
+                    },
+                    "tool_input": {"title": "Tool input", "type": "string"},
+                },
+                "required": ["tool", "tool_input"],
+            },
+        }
+        prompt = prompt.partial(tool_names='\n'.join(tool_names))
+        agent = prompt | llm.bind(functions=[function_schema]) | TODOAssistantOutputParser()
 
         return cls(agent=agent)
 
@@ -94,24 +107,13 @@ class TODOAssistantOutputParser(BaseOutputParser[TODOAssistantAgentOutput]):
         if not isinstance(message, AIMessage):
             raise TypeError(f"Expected an AI message got {type(message)}")
 
-        if '<FINISH>' in message.content:
-            return TODOAssistantAgentOutput(
-                next="FINISH",
-                input=None,
-            )
-
         function_call = message.additional_kwargs.get("function_call", {})
         if function_call:
-            function_name = function_call["name"]
-
-            if len(function_call["arguments"].strip()) == 0:
-                tool_input = {}
-            else:
-                tool_input = json.loads(function_call["arguments"], strict=False)
+            arguments = json.loads(function_call["arguments"], strict=False)
 
             return TODOAssistantAgentOutput(
-                next=function_name,
-                input=tool_input["input"],
+                next=arguments["tool"],
+                input=arguments["tool_input"],
             )
         else:
             return TODOAssistantAgentOutput(

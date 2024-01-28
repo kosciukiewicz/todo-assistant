@@ -135,7 +135,6 @@ class TODOAssistantGraphBuilder(BaseGraphBuilder):
                 "todo_api_call": "APIAgent",
                 "todo_query": "RetrievalTool",
                 "RESPOND": END,
-                "FINISH": END,
             },
         )
         workflow.add_edge("APIAgent", 'TodoAssistant')
