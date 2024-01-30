@@ -43,23 +43,5 @@ class TODOAssistant:
         self._reset_state()
         self._conversation_history.append(HumanMessage(content=human_input))
 
-    def run(self) -> None:
-        current_step = 0
-        while current_step != self._max_steps:
-            ai_response = self.step()
-            print(ai_response.content)
-            print("=" * 10)
-
-            if ai_response.is_final_response:
-                return
-
-            user_input = input("Your response: ")
-            print("=" * 10)
-
-            self.add_human_input(user_input)
-            current_step += 1
-
-        print("Maximum number of turns reached - ending the conversation.")
-
     def _reset_state(self) -> None:
         self._conversation_history = []

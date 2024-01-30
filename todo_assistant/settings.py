@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     MODEL_NAME: str
     MODEL_VERBOSE: bool = False
 
+    VISUALIZE_RUN: bool = False
+    MAX_STEPS: int = 10
+
     class Config:
         env_file = _ENV_FILE
         env_file_encoding = "utf-8"
