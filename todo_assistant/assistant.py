@@ -1,5 +1,14 @@
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable
+from pydantic import BaseModel
+
+_FINAL_MESSAGE = "Assistant decided to end conversation"
+_STOP_INDICATOR = '<FINISH>'
+
+
+class TODOAssistantResponse(BaseModel):
+    content: str
+    is_final_response: bool
 
 
 class TODOAssistant:
@@ -8,30 +17,47 @@ class TODOAssistant:
         self._conversation_history: list[BaseMessage] = []
         self._max_steps = max_steps
 
-    def step(self) -> dict:
-        return self._agent.invoke({"messages": self._conversation_history})
+    def step(self) -> TODOAssistantResponse:
+        response = self._agent.invoke({"messages": self._conversation_history})
+        for message in reversed(response['messages']):
+            if isinstance(message, AIMessage) and message.content:
+                response = str(message.content)
+                if _STOP_INDICATOR in response:
+                    response = response.replace(_STOP_INDICATOR, '')
+                    return TODOAssistantResponse(
+                        content=response or _FINAL_MESSAGE,
+                        is_final_response=True,
+                    )
+                else:
+                    return TODOAssistantResponse(
+                        content=response,
+                        is_final_response=False,
+                    )
+
+        return TODOAssistantResponse(
+            content=_FINAL_MESSAGE,
+            is_final_response=True,
+        )
 
     def add_human_input(self, human_input: str) -> None:
+        self._reset_state()
         self._conversation_history.append(HumanMessage(content=human_input))
 
-    def run(self):
-        cnt = 0
-        while cnt != self._max_steps:
+    def run(self) -> None:
+        current_step = 0
+        while current_step != self._max_steps:
             ai_response = self.step()
-            for message in ai_response['messages']:
-                if isinstance(message, AIMessage) and message.content:
-                    if '<FINISH>' in message.content:
-                        print("Assistant decided to end conversation")
-                        return
-
-                    print(message.content.replace('<FINISH>', ''))
-
+            print(ai_response.content)
             print("=" * 10)
-            human_input = input("Your response: ")
-            self._reset_state()
-            self.add_human_input(human_input)
+
+            if ai_response.is_final_response:
+                return
+
+            user_input = input("Your response: ")
             print("=" * 10)
-            cnt += 1
+
+            self.add_human_input(user_input)
+            current_step += 1
 
         print("Maximum number of turns reached - ending the conversation.")
 

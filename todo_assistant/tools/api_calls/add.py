@@ -31,9 +31,9 @@ class AddTaskTool(BaseTool):
         task = self.task_api_client.add(
             task_to_create=CreateTaskRequest(
                 title=task_name,
-                priority=TaskPriority.HIGH,
-                work_estimation=2,
-                status=TaskStatus.IN_PROGRESS,
+                priority=TaskPriority.MEDIUM,
+                work_estimation=1,
+                status=TaskStatus.NOT_STARTED,
             )
         )
         self.vectorstore.add_texts(texts=[task.as_text()], metadatas=[task.as_metadata()])

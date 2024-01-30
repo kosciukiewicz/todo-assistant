@@ -48,8 +48,10 @@ class _BaseTODOAssistantToolNode(
                     content='',
                     additional_kwargs={
                         'function_call': {
-                            'arguments': json.dumps({'input': state['input']}),
-                            'name': state['next'],
+                            'arguments': json.dumps(
+                                {'tool_input': state['input'], 'tool': state['next']}
+                            ),
+                            'name': 'tool_call',
                         }
                     },
                 ),
