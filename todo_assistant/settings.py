@@ -7,6 +7,7 @@ _ENV_FILE = os.getenv("_ENV_FILE", default=str(Path(__file__).parent.parent / ".
 
 
 class Settings(BaseSettings):
+    OPENAI_API_KEY: str
     NOTION_API_KEY: str
     NOTION_DATABASE_ID: str
     MODEL_NAME: str

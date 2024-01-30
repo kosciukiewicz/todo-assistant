@@ -20,13 +20,12 @@ from todo_assistant.di_containers.graph_builders import (
 from todo_assistant.di_containers.tools import Tools
 from todo_assistant.entities.task import Task
 from todo_assistant.graphs.base.graph_builder import BaseGraphBuilder
-from todo_assistant.settings import Settings
 
 
-def _init_vectorstore(settings: Settings) -> VectorStore:
+def _init_vectorstore(notion_api_key: str, notion_database_id: str) -> VectorStore:
     loader = NotionDBLoader(
-        integration_token=settings.NOTION_API_KEY,
-        database_id=settings.NOTION_DATABASE_ID,
+        integration_token=notion_api_key,
+        database_id=notion_database_id,
     )
     docs = loader.load()
 
@@ -68,9 +67,7 @@ def _build_graph(graph_builder: BaseGraphBuilder) -> Pregel:
 
 
 class Application(containers.DeclarativeContainer):
-    settings = Settings()
     config = providers.Configuration()
-    config.from_pydantic(settings)
 
     api_clients = providers.Container(
         ApiClients,
@@ -79,12 +76,18 @@ class Application(containers.DeclarativeContainer):
 
     llm = providers.Singleton(
         ChatLiteLLM,
-        model=settings.MODEL_NAME,
+        model=config.MODEL_NAME,
         temperature=0,
-        verbose=settings.MODEL_VERBOSE,
+        verbose=config.MODEL_VERBOSE,
+        openai_api_key=config.OPENAI_API_KEY,
     )
 
-    vectorstore = providers.Factory(_init_vectorstore, settings=settings)
+    vectorstore = providers.Factory(
+        _init_vectorstore,
+        notion_api_key=config.NOTION_API_KEY,
+        notion_database_id=config.NOTION_DATABASE_ID,
+    )
+
     tools = providers.Container(
         Tools,
         config=config,
