@@ -78,7 +78,6 @@ class Application(containers.DeclarativeContainer):
         ChatLiteLLM,
         model=config.MODEL_NAME,
         temperature=0,
-        verbose=config.MODEL_VERBOSE,
         openai_api_key=config.OPENAI_API_KEY,
     )
 

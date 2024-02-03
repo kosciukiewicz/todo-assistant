@@ -35,7 +35,6 @@ if ("todo_assistant" not in st.session_state) and all(
             NOTION_API_KEY=notion_api_key,
             NOTION_DATABASE_ID=notion_database_id,
             MODEL_NAME="gpt-3.5-turbo-1106",
-            MODEL_VERBOSE=False,
         )
         application = Application()
         application.config.from_pydantic(settings)

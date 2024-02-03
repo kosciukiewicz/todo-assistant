@@ -1,13 +1,13 @@
 import json
 from typing import Any, List, Optional, Type
 
-from langchain.chat_models import ChatLiteLLM
 from langchain.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
     PromptTemplate,
     SystemMessagePromptTemplate,
 )
+from langchain_community.chat_models import ChatLiteLLM
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, Generation

@@ -1,9 +1,9 @@
 import json
 from typing import Any, List, Optional
 
-from langchain.chat_models import ChatLiteLLM
 from langchain.prompts import ChatPromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from langchain.tools import BaseTool
+from langchain_community.chat_models import ChatLiteLLM
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.output_parsers import BaseOutputParser

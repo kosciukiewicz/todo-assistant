@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     NOTION_API_KEY: str
     NOTION_DATABASE_ID: str
     MODEL_NAME: str
-    MODEL_VERBOSE: bool = False
+    VERBOSE: bool = False
+    DEBUG: bool = False
 
     VISUALIZE_RUN: bool = False
     MAX_STEPS: int = 10
