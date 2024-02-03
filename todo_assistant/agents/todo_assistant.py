@@ -85,7 +85,11 @@ class TODOAssistantAgent(BaseAgent[TODOAssistantAgentInput, TODOAssistantAgentOu
             },
         }
         prompt = prompt.partial(tool_names='\n'.join(tool_names))
-        agent = prompt | llm.bind(functions=[function_schema]) | TODOAssistantOutputParser()
+        agent = (
+            prompt
+            | llm.with_config({"run_name": "TODOAssistant_llm"}).bind(functions=[function_schema])
+            | TODOAssistantOutputParser()
+        )
 
         return cls(agent=agent)
 

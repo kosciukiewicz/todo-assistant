@@ -79,6 +79,7 @@ class Application(containers.DeclarativeContainer):
         model=config.MODEL_NAME,
         temperature=0,
         openai_api_key=config.OPENAI_API_KEY,
+        streaming=True,
     )
 
     vectorstore = providers.Factory(

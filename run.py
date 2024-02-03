@@ -1,3 +1,5 @@
+import asyncio
+
 from dependency_injector.wiring import Provide, inject
 from langchain.globals import set_debug, set_verbose
 from langsmith import traceable
@@ -12,12 +14,11 @@ from todo_assistant.settings import Settings
     name="TODO Assistant",
 )
 @inject
-def _run(
+async def _run(
     todo_assistant: TODOAssistant = Provide[Application.todo_assistant], max_steps: int = 10
 ) -> None:
     current_step = 0
-    ai_response = todo_assistant.step()
-    print(ai_response.content)
+    await todo_assistant.astep()
     print("=" * 10)
 
     while current_step <= max_steps:
@@ -27,9 +28,8 @@ def _run(
         print("=" * 10)
 
         todo_assistant.add_human_input(user_input)
-        ai_response = todo_assistant.step()
+        ai_response = await todo_assistant.astep()
 
-        print(ai_response.content)
         print("=" * 10)
 
         if ai_response.is_final_response:
@@ -46,6 +46,8 @@ if __name__ == '__main__':
 
     set_debug(application.config.DEBUG())
     set_verbose(application.config.VERBOSE())
-    _run(
-        max_steps=application.config.MAX_STEPS(),
+    asyncio.run(
+        _run(
+            max_steps=application.config.MAX_STEPS(),
+        )
     )

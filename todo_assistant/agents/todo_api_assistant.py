@@ -4,12 +4,12 @@ from typing import Any, List, Optional
 from langchain.prompts import ChatPromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from langchain.tools import BaseTool
 from langchain_community.chat_models import ChatLiteLLM
-from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import MessagesPlaceholder
 from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.utils.function_calling import convert_to_openai_function
 from pydantic import BaseModel
 
 from todo_assistant.agents.base import BaseAgent
@@ -48,7 +48,7 @@ class TODOAPIAssistantAgent(BaseAgent[TODOAPIAssistantAgentInput, TODOAPIAssista
             ]
         )
         all_tools = api_call_tools + [search_task_id_by_name_tool]
-        llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in all_tools])
+        llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in all_tools])
         agent = prompt | llm_with_tools | APICallOutputParser()
         return cls(agent=agent)
 
