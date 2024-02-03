@@ -1,11 +1,16 @@
 from dependency_injector.wiring import Provide, inject
 from langchain.globals import set_debug, set_verbose
+from langsmith import traceable
 
 from todo_assistant.assistant import TODOAssistant
 from todo_assistant.di_containers.application import Application
 from todo_assistant.settings import Settings
 
 
+@traceable(
+    run_type="chain",
+    name="TODO Assistant",
+)
 @inject
 def _run(
     todo_assistant: TODOAssistant = Provide[Application.todo_assistant], max_steps: int = 10

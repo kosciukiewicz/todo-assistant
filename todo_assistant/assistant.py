@@ -1,5 +1,6 @@
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable
+from langsmith import traceable
 from pydantic import BaseModel
 
 _FINAL_MESSAGE = "Assistant decided to end conversation"
@@ -17,6 +18,10 @@ class TODOAssistant:
         self._conversation_history: list[BaseMessage] = []
         self._max_steps = max_steps
 
+    @traceable(
+        run_type="chain",
+        name="Step",
+    )
     def step(self) -> TODOAssistantResponse:
         response = self._agent.invoke({"messages": self._conversation_history})
         for message in reversed(response['messages']):
