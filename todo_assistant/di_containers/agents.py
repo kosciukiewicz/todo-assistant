@@ -4,9 +4,8 @@ from langchain_core.runnables import Runnable
 from langgraph.pregel import Pregel
 
 from todo_assistant.agents.todo_api import TODOAPIAgent
-from todo_assistant.agents.todo_api_assistant import TODOAPIAssistantAgent
-from todo_assistant.agents.todo_assistant import TODOAssistantAgent
-from todo_assistant.tools.retrieval import TODORetrievalTool
+from todo_assistant.agents.todo_api_assistant.agent import TODOAPIAssistantAgent
+from todo_assistant.agents.todo_assistant.agent import TODOAssistantAgent
 
 
 class AgentContainer(containers.DeclarativeContainer):
@@ -29,14 +28,10 @@ class TODOAPIAssistantAgentContainer(AgentContainer):
 class TODOAssistantAgentContainer(AgentContainer):
     config = providers.Configuration()
     llm: providers.Dependency[ChatLiteLLM] = providers.Dependency()
-    todo_api_agent = providers.Dependency(instance_of=TODOAPIAgent)
-    retrieval_tool = providers.Dependency(instance_of=TODORetrievalTool)
 
     agent = providers.Factory(
-        TODOAssistantAgent.from_llm_and_agent_tools,
+        TODOAssistantAgent.from_llm,
         llm=llm,
-        todo_api_agent=todo_api_agent,
-        retrieval_tool=retrieval_tool,
     )
 
 

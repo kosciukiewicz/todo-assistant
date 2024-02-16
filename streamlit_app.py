@@ -3,7 +3,8 @@ import asyncio
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
-from todo_assistant.assistant import BaseAssistantResponseCallback, TODOAssistantResponse
+from todo_assistant.assistant.callbacks import BaseAssistantResponseCallback
+from todo_assistant.assistant.response import TODOAssistantResponse
 from todo_assistant.di_containers.application import Application
 from todo_assistant.settings import Settings
 

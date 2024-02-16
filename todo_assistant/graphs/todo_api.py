@@ -11,8 +11,7 @@ from todo_assistant.agents.todo_api_assistant import (
     TODOAPIAssistantAgentInput,
     TODOAPIAssistantAgentOutput,
 )
-from todo_assistant.graphs.base.graph_builder import BaseGraphBuilder
-from todo_assistant.graphs.base.nodes import BaseNode
+from todo_assistant.graphs.base import BaseGraphBuilder, BaseNode
 from todo_assistant.tools.search_task_id_by_name import SearchTaskIDByNameTool
 
 

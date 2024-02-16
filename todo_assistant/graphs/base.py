@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional, TypeVar
 
 from langchain_core.runnables import Runnable, RunnableConfig
+from langgraph.pregel import Pregel
 
 TState = TypeVar('TState')
 TOutput = TypeVar('TOutput')
@@ -25,4 +26,10 @@ class BaseNode(
 
     @abstractmethod
     def _parse_output(self, state: TState, output: TRunnableOutput) -> TOutput:
+        pass
+
+
+class BaseGraphBuilder(ABC):
+    @abstractmethod
+    def build_graph(self) -> Pregel:
         pass

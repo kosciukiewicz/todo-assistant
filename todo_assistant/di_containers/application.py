@@ -7,7 +7,7 @@ from langchain_openai import OpenAIEmbeddings
 from langgraph.pregel import Pregel
 
 from todo_assistant.api_clients.notion import NotionDatabaseTaskAPIClient
-from todo_assistant.assistant import TODOAssistant
+from todo_assistant.assistant.assistant import TODOAssistant
 from todo_assistant.di_containers.agents import (
     TODOAPIAgentContainer,
     TODOAPIAssistantAgentContainer,
@@ -19,7 +19,7 @@ from todo_assistant.di_containers.graph_builders import (
 )
 from todo_assistant.di_containers.tools import Tools
 from todo_assistant.entities.task import Task
-from todo_assistant.graphs.base.graph_builder import BaseGraphBuilder
+from todo_assistant.graphs.base import BaseGraphBuilder
 
 
 def _init_vectorstore(notion_api_key: str, notion_database_id: str) -> VectorStore:
@@ -123,8 +123,6 @@ class Application(containers.DeclarativeContainer):
         TODOAssistantAgentContainer,
         config=config,
         llm=llm,
-        todo_api_agent=todo_api_agent.agent,
-        retrieval_tool=tools.retrieval_tool,
     )
 
     todo_assistant_graph_builder = providers.Container(

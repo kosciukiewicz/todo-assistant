@@ -1,7 +1,7 @@
 from dependency_injector import containers, providers
 from langchain_core.runnables import Runnable
 
-from todo_assistant.graphs.base.graph_builder import BaseGraphBuilder
+from todo_assistant.graphs.base import BaseGraphBuilder
 from todo_assistant.graphs.todo_api import TODOApiGraphBuilder
 from todo_assistant.graphs.todo_assistant import TODOAssistantGraphBuilder
 

@@ -1,57 +1,20 @@
 from __future__ import annotations
 
-import sys
-from abc import ABC, abstractmethod
 from typing import Any
 
-from langchain_core.load import Serializable
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable
 from langsmith import traceable
 
-from todo_assistant.prompts import TODO_ASSISTANT_INTRODUCTION_MESSAGE
+from todo_assistant.assistant.callbacks import (
+    BaseAssistantResponseCallback,
+    StdOutAssistantResponseCallback,
+)
+from todo_assistant.assistant.response import TODOAssistantResponse
+from todo_assistant.prompts import STOP_INDICATOR, TODO_ASSISTANT_INTRODUCTION_MESSAGE
 
-_FINAL_MESSAGE = "Assistant decided to end conversation"
-_STOP_INDICATOR = 'FINAL'
 _TODO_ASSISTANT_LLM_NAME = "TODOAssistant_llm"
 _TODO_ASSISTANT_AGENT_NAME = "TODOAssistant_agent"
-
-
-class BaseAssistantResponseCallback(ABC):
-    @abstractmethod
-    def on_stream_new_token(self, token: str) -> None:
-        pass
-
-    @abstractmethod
-    def on_stream_finish(self) -> None:
-        pass
-
-    @abstractmethod
-    def on_response(self, final_response: TODOAssistantResponse) -> None:
-        pass
-
-
-class StdOutAssistantResponseCallback(BaseAssistantResponseCallback):
-    def on_stream_new_token(self, token: str) -> None:
-        sys.stdout.write(token)
-
-    def on_stream_finish(self) -> None:
-        sys.stdout.write('\n')
-
-    def on_response(self, final_response: TODOAssistantResponse) -> None:
-        pass
-
-
-class TODOAssistantResponse(Serializable):
-    content: str
-    is_final_response: bool
-
-    @classmethod
-    def create_final(cls, content: str = '') -> TODOAssistantResponse:
-        return cls(
-            content=content or _FINAL_MESSAGE,
-            is_final_response=True,
-        )
 
 
 class TODOAssistant:
@@ -92,7 +55,7 @@ class TODOAssistant:
                     return response
             if kind == "on_chat_model_stream" and name == _TODO_ASSISTANT_LLM_NAME:
                 content = event["data"]["chunk"]
-                if content and content != _STOP_INDICATOR:
+                if content and content != STOP_INDICATOR:
                     new_token_callback.on_stream_new_token(content)
             if kind == "on_chat_model_end" and name == _TODO_ASSISTANT_LLM_NAME:
                 new_token_callback.on_stream_finish()
@@ -118,8 +81,8 @@ class TODOAssistant:
         for message in reversed(response['messages']):
             if isinstance(message, AIMessage) and message.content:
                 content = str(message.content)
-                if _STOP_INDICATOR in content:
-                    content = content.replace(_STOP_INDICATOR, '')
+                if STOP_INDICATOR in content:
+                    content = content.replace(STOP_INDICATOR, '')
                     return TODOAssistantResponse.create_final(content.strip())
                 else:
                     return TODOAssistantResponse(

@@ -4,7 +4,7 @@ from dependency_injector.wiring import Provide, inject
 from langchain.globals import set_debug, set_verbose
 from langsmith import traceable
 
-from todo_assistant.assistant import TODOAssistant
+from todo_assistant.assistant.assistant import TODOAssistant
 from todo_assistant.di_containers.application import Application
 from todo_assistant.settings import Settings
 

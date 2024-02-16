@@ -14,8 +14,7 @@ from todo_assistant.agents.todo_assistant import (
     TODOAssistantAgentInput,
     TODOAssistantAgentOutput,
 )
-from todo_assistant.graphs.base.graph_builder import BaseGraphBuilder
-from todo_assistant.graphs.base.nodes import BaseNode
+from todo_assistant.graphs.base import BaseGraphBuilder, BaseNode
 from todo_assistant.tools.retrieval import TODORetrievalTool
 
 
