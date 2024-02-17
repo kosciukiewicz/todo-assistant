@@ -75,7 +75,7 @@ async def main():
             application.wire(modules=[__name__])
 
             st.session_state.todo_assistant = application.todo_assistant()
-            ai_response = st.session_state.todo_assistant.step()
+            ai_response = st.session_state.todo_assistant.init()
             st.session_state.is_final = ai_response.is_final_response
             st.session_state.assistant_processing = False
             st.session_state.messages.append({"role": "assistant", "content": ai_response.content})
@@ -92,8 +92,6 @@ async def main():
             disabled=st.session_state.assistant_processing,
             on_submit=mark_assistant_processing,
         ):
-            st.session_state.todo_assistant.add_human_input(user_message)
-
             with st.chat_message("user"):
                 st.markdown(user_message)
             st.session_state.messages.append({"role": "user", "content": user_message})
@@ -101,9 +99,10 @@ async def main():
             with st.chat_message("assistant"):
                 message_placeholder = st.empty().markdown("▌")
                 await st.session_state.todo_assistant.astep(
+                    human_input=user_message,
                     new_token_callback=StreamlitAssistantResponseCallback(
                         message_placeholder=message_placeholder
-                    )
+                    ),
                 )
     else:
         st.info("Finished")

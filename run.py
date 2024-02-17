@@ -18,7 +18,7 @@ async def _run(
     todo_assistant: TODOAssistant = Provide[Application.todo_assistant], max_steps: int = 10
 ) -> None:
     current_step = 0
-    await todo_assistant.astep()
+    await todo_assistant.ainit()
     print("=" * 10)
 
     while current_step <= max_steps:
@@ -27,8 +27,7 @@ async def _run(
         user_input = input("Your response: ")
         print("=" * 10)
 
-        todo_assistant.add_human_input(user_input)
-        ai_response = await todo_assistant.astep()
+        ai_response = await todo_assistant.astep(human_input=user_input)
 
         print("=" * 10)
 

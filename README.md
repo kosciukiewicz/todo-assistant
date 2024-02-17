@@ -81,7 +81,7 @@ Here are a few examples of what you can do:
 ## Roadmap
 
 - ~~Streamlit application~~
-- Saving conversation history;
+- ~~Saving conversation history~~
 - Error handling;
 - Handle tasks properties like priority or work estimation;
 - Question answering based on the whole database not only the specific retrieved task;

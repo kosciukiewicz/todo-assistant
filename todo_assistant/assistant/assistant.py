@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-from langchain_core.runnables import Runnable
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langsmith import traceable
 
 from todo_assistant.assistant.callbacks import (
@@ -15,41 +19,74 @@ from todo_assistant.prompts import STOP_INDICATOR, TODO_ASSISTANT_INTRODUCTION_M
 
 _TODO_ASSISTANT_LLM_NAME = "TODOAssistant_llm"
 _TODO_ASSISTANT_AGENT_NAME = "TODOAssistant_agent"
+_TODO_ASSISTANT_NAME = "TODOAssistant"
 
 
 class TODOAssistant:
-    def __init__(self, agent: Runnable, max_steps: int = 10) -> None:
-        self._agent = agent.with_config({"run_name": _TODO_ASSISTANT_AGENT_NAME})
-        self._conversation_history: list[BaseMessage] = []
+    def __init__(self, agent: Runnable, max_steps: int = 10, session_id: str | None = None) -> None:
+        agent_with_history = (
+            self._insert_human_message
+            | agent.with_config({"run_name": _TODO_ASSISTANT_AGENT_NAME})
+            | self._filter_response_messages
+        )
+        self._session_id = session_id or uuid4().hex
+        self._agent = RunnableWithMessageHistory(
+            agent_with_history.with_config(  # type: ignore[arg-type]
+                {"run_name": _TODO_ASSISTANT_NAME}
+            ),
+            self.get_session_history,
+            input_messages_key="input",
+            history_messages_key="messages",
+            output_messages_key="messages",
+        ).with_config({"configurable": {"session_id": self._session_id}})
         self._max_steps = max_steps
+        self._conversation_history_store: dict[str, ChatMessageHistory] = {}
 
     @traceable(
         run_type="chain",
         name="Step",
     )
-    def step(self) -> TODOAssistantResponse:
-        response = self._agent.invoke({"messages": self._prepare_messages()})
+    def init(self) -> TODOAssistantResponse:
+        return self.step(human_input=TODO_ASSISTANT_INTRODUCTION_MESSAGE)
+
+    @traceable(
+        run_type="chain",
+        name="Step",
+    )
+    def step(self, human_input: str) -> TODOAssistantResponse:
+        response = self._agent.invoke({"input": human_input})
         return self._handle_raw_response(response)
 
     @traceable(
         run_type="chain",
         name="Step",
     )
-    async def astep(
+    async def ainit(
         self, new_token_callback: BaseAssistantResponseCallback | None = None
+    ) -> TODOAssistantResponse:
+        return await self.astep(
+            human_input=TODO_ASSISTANT_INTRODUCTION_MESSAGE, new_token_callback=new_token_callback
+        )
+
+    @traceable(
+        run_type="chain",
+        name="Step",
+    )
+    async def astep(
+        self, human_input: str, new_token_callback: BaseAssistantResponseCallback | None = None
     ) -> TODOAssistantResponse:
         if new_token_callback is None:
             new_token_callback = StdOutAssistantResponseCallback()
 
         async for event in self._agent.astream_events(
-            {"messages": self._prepare_messages()},
+            {"input": human_input},
             version="v1",
         ):
             name = event["name"]
             kind = event["event"]
 
-            if kind == "on_chain_end" and name == _TODO_ASSISTANT_AGENT_NAME:
-                if final_output := event['data']['output'].get('__end__'):
+            if kind == "on_chain_end" and name == _TODO_ASSISTANT_NAME:
+                if final_output := event['data']['output']:
                     response = self._handle_raw_response(final_output)
                     new_token_callback.on_response(response)
                     return response
@@ -65,22 +102,47 @@ class TODOAssistant:
         new_token_callback.on_response(response)
         return response
 
-    def add_human_input(self, human_input: str) -> None:
-        self._reset_state()
-        self._conversation_history.append(HumanMessage(content=human_input))
+    def get_session_history(self, session_id: str) -> BaseChatMessageHistory:
+        if session_id not in self._conversation_history_store:
+            self._conversation_history_store[session_id] = ChatMessageHistory()
+        return self._conversation_history_store[session_id]
 
-    def _prepare_messages(self) -> list[BaseMessage]:
-        return self._conversation_history or [
-            # Single message is required, or astream_events logs broke because of jsonpatch
-            # incompatibilities in log
-            AIMessage(content=TODO_ASSISTANT_INTRODUCTION_MESSAGE)
-        ]
+    @staticmethod
+    def _insert_human_message(input_message: dict[str, Any]) -> dict[str, Any]:
+        results = {
+            "messages": [*input_message['messages'], HumanMessage(content=input_message['input'])],
+        }
+        return results
+
+    @staticmethod
+    def _filter_response_messages(
+        result: dict[str, Any], config: RunnableConfig | None = None
+    ) -> dict[str, Any]:
+        if 'messages' in result:
+            messages = result['messages']
+        else:
+            messages = result['__end__']['messages']
+
+        filtered_messages = []
+
+        for message in messages:
+            if isinstance(message, AIMessage | HumanMessage) and message.content:
+                filtered_messages.append(message)
+
+        if config:
+            message_history_len = 1 + len(config['configurable']['message_history'].messages)
+        else:
+            message_history_len = 0
+
+        messages = filtered_messages[message_history_len:]
+        return {'messages': messages}
 
     @staticmethod
     def _handle_raw_response(response: dict[str, Any]) -> TODOAssistantResponse:
-        for message in reversed(response['messages']):
-            if isinstance(message, AIMessage) and message.content:
-                content = str(message.content)
+        if len(response['messages']) == 1:
+            last_message = response['messages'][-1]
+            if isinstance(last_message, AIMessage) and last_message.content:
+                content = str(last_message.content)
                 if STOP_INDICATOR in content:
                     content = content.replace(STOP_INDICATOR, '')
                     return TODOAssistantResponse.create_final(content.strip())
@@ -90,8 +152,6 @@ class TODOAssistant:
                         is_final_response=False,
                     )
 
-        # No output, create final response
-        return TODOAssistantResponse.create_final()
-
-    def _reset_state(self) -> None:
-        self._conversation_history = []
+            raise ValueError("No message from TODOAssistant found")
+        else:
+            raise ValueError("Expected exactly one message from TODOAssistant")
